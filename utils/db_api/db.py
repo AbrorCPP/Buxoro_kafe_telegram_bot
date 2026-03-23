@@ -37,16 +37,16 @@ class Database:
 
         return data
 
-    def user_registration(self, username, telegram_id, phone, lng, lat):
+    def user_registration(self, username, telegram_id, phone, coordinates):
         sql = """
-        INSERT INTO user (username, telegram_id, phone_number, logitude, latitude) 
-        VALUES (%s, %s, %s, %s, %s) 
+        INSERT INTO users (username, telegram_id, phone_number, coordinates) 
+        VALUES (%s, %s, %s, %s) 
         """
-        params = (username, telegram_id, phone, lng, lat)
+        params = (username, telegram_id, phone, coordinates)
         return self.execute(sql, params, commit=True)
 
     def detect_user(self, telegram_id):
-        sql = """SELECT * FROM user WHERE telegram_id = %s"""
+        sql = """SELECT * FROM users WHERE telegram_id = %s"""
         params = (telegram_id,)
         return self.execute(sql, params, fetchone=True)
 
@@ -58,6 +58,21 @@ class Database:
             return self.execute(sql, params, commit=True)
         except Exception as e:
             print(f"Bazada xatolik (add_admin): {e}")
+            return False
+        
+    def detect_admin(self, telegram_id):
+        sql = """SELECT * FROM admin WHERE telegram_id = %s"""
+        params = (telegram_id,)
+        return self.execute(sql,params,fetchone=True)
+    
+    def category_creation(self,name,image_id,description):
+        sql = """Insert into categories (name,image_id,description) values(%s,%s,%s)"""
+        params = (name,image_id,description)
+
+        try: 
+            return self.execute(sql,params,commit = True)
+        except Exception as e:
+            print(f"Bazada xatolik(category_add:{e}")
             return False
 
 

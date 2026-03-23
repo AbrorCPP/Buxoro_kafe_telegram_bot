@@ -1,3 +1,5 @@
+#This form allows super_user in order to add admins
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from loader import s_id, db

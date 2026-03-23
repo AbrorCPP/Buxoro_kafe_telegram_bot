@@ -24,7 +24,6 @@ async def start_cmd(message: Message, state: FSMContext):
             "Assalomu alaykum! 😊\nBotdan foydalanish uchun ro'yxatdan o'ting.\n\nTo'liq ismingizni kiriting:")
         await state.set_state(UserRegistrationForm.fullname)
     else:
-        # Agar foydalanuvchi bo'lsa, uning ismini bazadan olamiz
         name = user.get('username', 'Foydalanuvchi')
         await message.answer(f"Xush kelibsiz, {name}! 👋\nSiz allaqachon ro'yxatdan o'tgansiz.")
 
@@ -36,7 +35,6 @@ async def process_fullname(message: Message, state: FSMContext):
 
 @router.message(UserRegistrationForm.phone)
 async def process_phone(message: Message, state: FSMContext):
-    # Oddiy format tekshiruvi
     if message.text and (message.text.isdigit() or message.text.startswith('+')):
         await state.update_data(phone=message.text)
 
@@ -53,8 +51,7 @@ async def process_phone(message: Message, state: FSMContext):
 
 @router.message(UserRegistrationForm.address, F.location)
 async def process_address(message: Message, state: FSMContext):
-    lat = message.location.latitude
-    lng = message.location.longitude
+    coordinates = f"{message.location.latitude}, {message.location.longitude}"
     data = await state.get_data()
 
     try:
@@ -62,8 +59,7 @@ async def process_address(message: Message, state: FSMContext):
             username=str(data.get("fullname")),
             telegram_id=str(message.from_user.id),
             phone=str(data.get("phone")),
-            lng=str(lng),
-            lat=str(lat),
+            coordinates=coordinates, 
         )
         await message.answer(
             "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi! ✅",
@@ -73,4 +69,4 @@ async def process_address(message: Message, state: FSMContext):
 
     except Exception as e:
         print(f"Registration error: {e}")
-        await message.answer("Ro'yxatdan o'tishda xatolik yuz berdi! Iltimos, keyinroq qayta urinib ko'ring.")
+        await message.answer("Ro'yxatdan o'tishda xatolik yuz berdi!")
