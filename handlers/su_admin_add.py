@@ -1,4 +1,4 @@
-#This form allows super_user in order to add admins
+#This form allows super_user in
 
 from aiogram import types
 from aiogram.fsm.context import FSMContext
@@ -8,8 +8,11 @@ from states.add_admin_state import AdminRegistrationForm
 
 db = db
 
-@router.message(lambda message: str(message.from_user.id) == str(s_id) and message.text == "/add_admin")
+@router.message(lambda message: message.text == "/add_admin")
 async def add_admin(message: types.Message, state: FSMContext):
+    if not str(message.from_user.id) == str(s_id):
+        await message.answer("Siz Super_admin emassiz.🚫")
+        return
     await state.clear()
     await message.answer(text="Adminning ism familiyasini kiriting:")
     await state.set_state(AdminRegistrationForm.username)

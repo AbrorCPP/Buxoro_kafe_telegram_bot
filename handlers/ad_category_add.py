@@ -38,8 +38,8 @@ async def add_category_state_image_id(message: types.Message, state:FSMContext):
     try:
         db.category_creation(
             name = data['name'],
-            image_id = data('image_id'),
-            description = data('description'),
+            image_id = data['image_id'],
+            description = data['description']
             )
         await message.answer("Muvaffaqiyatli ro'yxatga olindi✅")
         await state.clear()
