@@ -1,6 +1,5 @@
 import pymysql
 
-
 class Database:
     def __init__(self, db_name, db_password, db_user, db_port, db_host):
         self.db_name = db_name
@@ -8,6 +7,7 @@ class Database:
         self.db_user = db_user
         self.db_port = db_port
         self.db_host = db_host
+        self.connection = self.connect
 
     def connect(self):
         return pymysql.Connection(
@@ -82,14 +82,23 @@ class Database:
         return self.execute(sql, params, commit=True)
 
     def get_all_categories(self):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT id, name FROM categories")
-            return cursor.fetchall()
+        # self.execute orqali ishlatish kodni qisqartiradi va xatolarni oldini oladi
+        sql = "SELECT id, name FROM categories"
+        return self.execute(sql, fetchall=True)
     
     def delete_category(self,cat_id):
         sql = "delete from categories where id = %s"
-        params = (cat_id)
+        params = (cat_id,)
+        return self.execute(sql,params,commit = True)
+    
+    def delete_admin(self,admin_id):
+        sql = "delete from admin where id = %s"
+        params = (admin_id,)
         return self.execute(sql,params,commit = True)
 
+    def get_all_admins(self):
+        sql = "SELECT id, username FROM admin"
+        return self.execute(sql, fetchall=True)
+        
 
 

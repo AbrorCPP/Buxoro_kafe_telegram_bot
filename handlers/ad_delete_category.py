@@ -1,6 +1,6 @@
 from aiogram import Router,F
 from aiogram.fsm.context import FSMContext
-from keyboards.inline.edit_category import edit_category_keyboard
+from keyboards.inline.delete_category import delete_category_keyboard
 from aiogram.types import InlineKeyboardMarkup,CallbackQuery,Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from router import router
@@ -21,7 +21,7 @@ async def show_categories_for_delete(message: Message):
 
     await message.answer(
         "🚫 O'chirish uchun kategoriyani tanlang:", 
-        reply_markup=edit_category_keyboard(categories) 
+        reply_markup=delete_category_keyboard(categories) 
     )
 
 @router.callback_query(F.data.startswith("del_cat_")) 
