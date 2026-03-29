@@ -74,6 +74,22 @@ class Database:
         except Exception as e:
             print(f"Bazada xatolik(category_add:{e}")
             return False
+        
+    def update_category_all_fields(self, cat_id, name, image_id, description):
+        sql = "UPDATE categories SET name=%s, image_id=%s, description=%s WHERE id=%s"
+        params = (name, image_id, description, cat_id)
+
+        return self.execute(sql, params, commit=True)
+
+    def get_all_categories(self):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT id, name FROM categories")
+            return cursor.fetchall()
+    
+    def delete_category(self,cat_id):
+        sql = "delete from categories where id = %s"
+        params = (cat_id)
+        return self.execute(sql,params,commit = True)
 
 
 
