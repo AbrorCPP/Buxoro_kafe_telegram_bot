@@ -1,6 +1,6 @@
 from aiogram import Router,F
 from aiogram.fsm.context import FSMContext
-from keyboards import delete_admin
+from keyboards.inline.show_admin import show_admin_keyboard
 from aiogram.types import InlineKeyboardMarkup,CallbackQuery,Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from router import router
@@ -22,5 +22,5 @@ async def start_edit_handler(message: Message, state: FSMContext):
 
     await message.answer(
         "👨‍💼 Mavjud adminlar:", 
-        reply_markup=show_category_keyboard(admins)
+        reply_markup=show_admin_keyboard(admins)
     )
