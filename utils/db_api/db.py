@@ -82,7 +82,6 @@ class Database:
         return self.execute(sql, params, commit=True)
 
     def get_all_categories(self):
-        # self.execute orqali ishlatish kodni qisqartiradi va xatolarni oldini oladi
         sql = "SELECT id, name FROM categories"
         return self.execute(sql, fetchall=True)
     
@@ -100,5 +99,15 @@ class Database:
         sql = "SELECT id, username FROM admin"
         return self.execute(sql, fetchall=True)
         
+    def add_new_product(self,category_id,name,description,price,image_id):
+        sql = "Insert into products (category_id,name,description,price,image_id) values (%s,%s,%s,%s,%s)"
+        params = (category_id,name,description,price,image_id)
 
+        try:
+            self.execute(sql,params,commit=True)
+            return True
+        except Exception as e:
+            print(f"Bazada xatolik(category_add:{e}")
+            return False
 
+    
