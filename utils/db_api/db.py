@@ -110,4 +110,11 @@ class Database:
             print(f"Bazada xatolik(category_add:{e}")
             return False
 
+    def get_products_by_category(self, cat_id):
+        sql = "SELECT * FROM products WHERE category_id = %s"
+        return self.execute(sql, (cat_id,), fetchall=True)
+    
+    def delete_product(self,product_id):
+        sql = "DELETE * FROM products WHERE id = %s"
+        return self.execute(sql, (product_id,),commit = True)
     
