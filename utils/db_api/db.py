@@ -115,6 +115,6 @@ class Database:
         return self.execute(sql, (cat_id,), fetchall=True)
     
     def delete_product(self,product_id):
-        sql = "DELETE * FROM products WHERE id = %s"
+        sql = "DELETE FROM products WHERE id = %s"
         return self.execute(sql, (product_id,),commit = True)
     
