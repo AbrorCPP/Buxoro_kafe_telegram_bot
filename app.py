@@ -2,8 +2,22 @@ import asyncio
 import logging
 
 from loader import dp, bot
-from handlers.user.user_start import router
+from router import router
+import handlers.user
+import handlers.super_admin
+import handlers.courier
+from aiogram.types import Message
 
+@router.message()
+async def cleanup_unhandled_messages(message: Message):
+    """
+    Deletes any messages that were not caught by existing handlers
+    to keep the chat UI extremely clean.
+    """
+    try:
+        await message.delete()
+    except:
+        pass
 
 async def main():
     await dp.start_polling(bot)

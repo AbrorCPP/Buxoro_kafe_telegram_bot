@@ -10,4 +10,7 @@ DB_PASSWORD = env.str("DB_PASSWORD")
 DB_HOST = env.str("DB_HOST")
 DB_PORT = env.int("DB_PORT")
 S_ADMIN = env.str("S_ADMIN")
-# PAYMENT_TOKEN = env.str("PAYMENT_TOKEN")
+try:
+    PAYMENT_TOKEN = env.str("BANK_TOKEN")
+except:
+    PAYMENT_TOKEN = env.str("PAYMENT_TOKEN", default="371317599:TEST:1712217647895")

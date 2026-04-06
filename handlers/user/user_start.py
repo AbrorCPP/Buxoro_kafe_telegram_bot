@@ -2,6 +2,7 @@ from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.command import CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from keyboards.reply.main_menu import main_menu_inline
 
 from router import router
 from states.start_state import UserRegistrationForm
@@ -25,7 +26,17 @@ async def start_cmd(message: Message, state: FSMContext):
         await state.set_state(UserRegistrationForm.fullname)
     else:
         name = user.get('username', 'Foydalanuvchi')
-        await message.answer(f"Xush kelibsiz, {name}! 👋\nSiz allaqachon ro'yxatdan o'tgansiz.")
+        text = (
+            f"\n<b>Assalomu alaykum, {message.from_user.username}!</b> 👋\n\n"
+            f"🤖 <b>Buxoro Kafe</b> botiga xush kelibsiz.\n"
+            f"Siz bu yerda eng mazali taomlarni topishingiz mumkin.\n\n"
+            f"<i>Kerakli bo'limni tanlang:</i>"
+        )
+        await message.answer(
+            text = text,
+            reply_markup=main_menu_inline(),
+            parse_mode="HTML"
+            )
 
 @router.message(UserRegistrationForm.fullname)
 async def process_fullname(message: Message, state: FSMContext):
@@ -61,12 +72,19 @@ async def process_address(message: Message, state: FSMContext):
             phone=str(data.get("phone")),
             coordinates=coordinates, 
         )
+        text = (
+            f"\n<b>Assalomu alaykum, {message.from_user.username}!</b> 👋\n\n"
+            f"🤖 <b>Buxoro Kafe</b> botiga xush kelibsiz.\n"
+            f"Siz bu yerda eng mazali taomlarni topishingiz mumkin.\n\n"
+            f"<i>Kerakli bo'limni tanlang:</i>"
+        )
         await message.answer(
-            "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi! ✅",
-            reply_markup=ReplyKeyboardRemove()
+            text = "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi! ✅" + text,
+            reply_markup=main_menu_inline(),
+            parse_mode="HTML"
         )
         await state.clear()
 
     except Exception as e:
-        print(f"Registration error: {e}")
+        print(f"Registration error: {e}");
         await message.answer("Ro'yxatdan o'tishda xatolik yuz berdi!")

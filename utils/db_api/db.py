@@ -117,4 +117,107 @@ class Database:
     def delete_product(self,product_id):
         sql = "DELETE FROM products WHERE id = %s"
         return self.execute(sql, (product_id,),commit = True)
-    
+
+    def get_product(self, product_id):
+        sql = "SELECT id, category_id, name, description, price, image_id FROM products WHERE id = %s"
+        return self.execute(sql, (product_id,), fetchone=True)
+
+    def add_to_cart(self, telegram_id, product_id, quantity=1):
+        sql_check = "SELECT id, quantity FROM cart WHERE user_id = %s AND product_id = %s"
+        res = self.execute(sql_check, (telegram_id, product_id), fetchone=True)
+        if res:
+            sql = "UPDATE cart SET quantity = quantity + %s WHERE id = %s"
+            return self.execute(sql, (quantity, res['id']), commit=True)
+        else:
+            sql = "INSERT INTO cart (user_id, product_id, quantity) VALUES (%s, %s, %s)"
+            return self.execute(sql, (telegram_id, product_id, quantity), commit=True)
+
+    def get_cart(self, telegram_id):
+        sql = """
+        SELECT c.id as cart_id, c.product_id, c.quantity, p.name, p.price 
+        FROM cart c 
+        JOIN products p ON c.product_id = p.id 
+        WHERE c.user_id = %s
+        """
+        return self.execute(sql, (telegram_id,), fetchall=True)
+
+    def clear_cart(self, telegram_id):
+        sql = "DELETE FROM cart WHERE user_id = %s"
+        return self.execute(sql, (telegram_id,), commit=True)
+
+    def delete_cart_item(self, cart_id):
+        sql = "DELETE FROM cart WHERE id = %s"
+        return self.execute(sql, (cart_id,), commit=True)
+
+    def create_order(self, telegram_id, items, total_price, delivery_price=0, distance=0):
+        sql_order = "INSERT INTO orders (user_id, total_price, delivery_price, distance_km) VALUES (%s, %s, %s, %s)"
+        self.execute(sql_order, (telegram_id, total_price, delivery_price, distance), commit=True)
+        
+        sql_last = "SELECT id FROM orders WHERE user_id = %s ORDER BY id DESC LIMIT 1"
+        order_res = self.execute(sql_last, (telegram_id,), fetchone=True)
+        if not order_res:
+            return False
+        order_id = order_res['id']
+        
+        for item in items:
+            sql_item = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)"
+            self.execute(sql_item, (order_id, item['product_id'], item['quantity'], item['price']), commit=True)
+        return order_id
+
+    def add_courier(self, telegram_id, username, phone):
+        sql = "INSERT INTO couriers (telegram_id, full_name, phone_number) VALUES (%s, %s, %s)"
+        return self.execute(sql, (telegram_id, username, phone), commit=True)
+
+    def get_all_couriers(self):
+        sql = "SELECT * FROM couriers"
+        return self.execute(sql, fetchall=True)
+
+    def detect_courier(self, telegram_id):
+        sql = "SELECT * FROM couriers WHERE telegram_id = %s"
+        return self.execute(sql, (telegram_id,), fetchone=True)
+
+    def delete_courier(self, telegram_id):
+        sql = "DELETE FROM couriers WHERE telegram_id = %s"
+        return self.execute(sql, (telegram_id,), commit=True)
+
+    def assign_courier(self, order_id, courier_id):
+        # check if already assigned
+        sql_chk = "SELECT courier_id FROM orders WHERE id = %s"
+        order = self.execute(sql_chk, (order_id,), fetchone=True)
+        if order and order['courier_id']:
+            return False # Already assigned
+        sql = "UPDATE orders SET courier_id = %s, status = 'accepted_by_courier' WHERE id = %s"
+        self.execute(sql, (courier_id, order_id), commit=True)
+        return True
+
+    def update_order_status(self, order_id, status):
+        sql = "UPDATE orders SET status = %s WHERE id = %s"
+        return self.execute(sql, (status, order_id), commit=True)
+
+    def get_order(self, order_id):
+        sql = "SELECT * FROM orders WHERE id = %s"
+        return self.execute(sql, (order_id,), fetchone=True)
+
+    def get_order_items_text(self, order_id):
+        sql = """
+        SELECT p.name, oi.quantity, oi.price 
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = %s
+        """
+        items = self.execute(sql, (order_id,), fetchall=True)
+        text = ""
+        for i in items:
+            text += f"▫️ {i['name']} x {i['quantity']} = {i['price'] * i['quantity']} so'm\n"
+        return text
+
+    def add_order_bid(self, order_id, courier_id):
+        sql_check = "SELECT id FROM order_bids WHERE order_id=%s AND courier_id=%s"
+        if self.execute(sql_check, (order_id, courier_id), fetchone=True):
+            return False
+        sql = "INSERT INTO order_bids (order_id, courier_id) VALUES (%s, %s)"
+        return self.execute(sql, (order_id, courier_id), commit=True)
+
+    def get_order_bids(self, order_id):
+        sql = "SELECT b.courier_id, c.username, c.phone FROM order_bids b JOIN couriers c ON b.courier_id = c.telegram_id WHERE b.order_id = %s"
+        return self.execute(sql, (order_id,), fetchall=True)

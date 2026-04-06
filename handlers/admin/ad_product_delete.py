@@ -12,6 +12,7 @@ async def admin_show_categories(message: types.Message):
     await message.answer("🚫 Mahsulotlarini o'chirmoqchi bo'lgan kategoriyani tanlang:", 
                          reply_markup=kb
     )
+
 @router.callback_query(F.data.startswith("adminforproduct_cat_"))
 async def show_category_products(callback: types.CallbackQuery):
     category_id = int(callback.data.split("_")[-1])
