@@ -12,6 +12,7 @@ def main_menu_inline():
         ],
         [
             InlineKeyboardButton(text="📞 Biz bilan bog'lanish", callback_data="contact_us"),
+            InlineKeyboardButton(text="📍 Joylashuv", callback_data="restaurant_location"),
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)

@@ -79,7 +79,8 @@ async def process_checkout(call: CallbackQuery, state: FSMContext):
 @router.message(CheckoutState.location)
 async def process_checkout_location(message: Message, state: FSMContext):
     from utils.math_utils import haversine
-    KAFE_LAT, KAFE_LON = 39.7747, 64.4286
+    # New Location: 87XQ+J64, Amir Temur Avenue, Tashkent
+    KAFE_LAT, KAFE_LON = 41.314681, 69.243562
 
     if message.location:
         loc = f"{message.location.latitude},{message.location.longitude}"
