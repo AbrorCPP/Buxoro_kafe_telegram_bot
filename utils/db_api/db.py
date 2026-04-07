@@ -98,6 +98,10 @@ class Database:
     def get_all_admins(self):
         sql = "SELECT id, username FROM admin"
         return self.execute(sql, fetchall=True)
+
+    def get_all_admin_ids(self):
+        sql = "SELECT telegram_id FROM admin"
+        return self.execute(sql, fetchall=True)
         
     def add_new_product(self,category_id,name,description,price,image_id):
         sql = "Insert into products (category_id,name,description,price,image_id) values (%s,%s,%s,%s,%s)"
@@ -165,7 +169,7 @@ class Database:
         return order_id
 
     def add_courier(self, telegram_id, username, phone):
-        sql = "INSERT INTO couriers (telegram_id, full_name, phone_number) VALUES (%s, %s, %s)"
+        sql = "INSERT INTO couriers (telegram_id, username, phone) VALUES (%s, %s, %s)"
         return self.execute(sql, (telegram_id, username, phone), commit=True)
 
     def get_all_couriers(self):

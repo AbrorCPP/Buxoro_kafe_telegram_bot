@@ -5,10 +5,17 @@ from router import router
 @router.callback_query(F.data == "contact_us")
 async def contact_us(call: CallbackQuery):
     text = (
-        "📞 <b>Buxoro Kafe</b> bilan aloqa:\n\n"
-        "📍 Manzil: Buxoro shahar, Mustaqillik ko'chasi 1-A uy.\n"
-        "📱 Telefon: +998 90 123 45 67\n"
-        "🕒 Ish vaqti: 08:00 dan 23:00 gacha\n"
+        "📞 <b>Biz bilan bog'lanish</b>\n"
+        "━━━━━━━━━━━━━━━━━\n\n"
+        "🏪 <b>Buxoro Kafe</b>\n\n"
+        "📍 <b>Manzil:</b>\n"
+        "   Buxoro shahar, Mustaqillik ko'chasi 1-A\n\n"
+        "📱 <b>Telefon:</b>\n"
+        "   <a href='tel:+998901234567'>+998 90 123 45 67</a>\n\n"
+        "🕐 <b>Ish vaqti:</b>\n"
+        "   Har kuni: 08:00 — 23:00\n\n"
+        "━━━━━━━━━━━━━━━━━\n"
+        "💬 Savollaringiz bo'lsa bemalol yozing!"
     )
     from keyboards.reply.main_menu import main_menu_inline
     await call.message.delete()
