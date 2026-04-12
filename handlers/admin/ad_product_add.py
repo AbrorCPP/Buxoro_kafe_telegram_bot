@@ -4,13 +4,14 @@ from aiogram.types import Message, CallbackQuery
 from router import router
 from states.add_product_state import ProductAdd
 from keyboards.inline.category_add_p import category_keyboard
-from loader import db
+from loader import db, bot
 
 @router.message(F.text == "/add_product")
 async def start_add_product(message: Message, state: FSMContext):
     categories = db.execute("SELECT id, name FROM categories", fetchall=True)
     kb = await category_keyboard(categories)
-    await message.answer(
+    sent_msg = await bot.send_message(
+        message.chat.id,
         "🛍 <b>Yangi mahsulot qo'shish</b>\n"
         "━━━━━━━━━━━━━━━━━\n\n"
         "Mahsulot qaysi kategoriyaga tegishli?",
@@ -18,6 +19,7 @@ async def start_add_product(message: Message, state: FSMContext):
         parse_mode="HTML"
     )
     await state.set_state(ProductAdd.waiting_for_category)
+    await state.update_data(message_ids=[sent_msg.message_id])
 
 @router.callback_query(ProductAdd.waiting_for_category, F.data.startswith("cat_"))
 async def process_category(callback: CallbackQuery, state: FSMContext):
@@ -34,38 +36,59 @@ async def process_category(callback: CallbackQuery, state: FSMContext):
 @router.message(ProductAdd.waiting_for_name)
 async def process_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await message.answer(
+    sent_msg = await bot.send_message(
+        message.chat.id,
         "📝 <b>Tavsif</b>\n\n"
         "Mahsulot tavsifini kiriting:",
         parse_mode="HTML"
     )
+    data = await state.get_data()
+    message_ids = data.get('message_ids', [])
+    message_ids.append(sent_msg.message_id)
+    await state.update_data(message_ids=message_ids)
     await state.set_state(ProductAdd.waiting_for_description)
 
 @router.message(ProductAdd.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    await message.answer(
+    sent_msg = await bot.send_message(
+        message.chat.id,
         "💰 <b>Narx</b>\n\n"
         "Narxni kiriting (faqat raqam, so'mda):\n"
         "<i>Masalan: 25000</i>",
         parse_mode="HTML"
     )
+    data = await state.get_data()
+    message_ids = data.get('message_ids', [])
+    message_ids.append(sent_msg.message_id)
+    await state.update_data(message_ids=message_ids)
     await state.set_state(ProductAdd.waiting_for_price)
 
 @router.message(ProductAdd.waiting_for_price)
 async def process_price(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        return await message.answer(
+        sent_msg = await bot.send_message(
+            message.chat.id,
             "❌ <b>Noto'g'ri format!</b>\n\n"
             "Faqat raqam kiriting. Masalan: <code>25000</code>",
             parse_mode="HTML"
         )
+        data = await state.get_data()
+        message_ids = data.get('message_ids', [])
+        message_ids.append(sent_msg.message_id)
+        await state.update_data(message_ids=message_ids)
+        return
     await state.update_data(price=int(message.text))
-    await message.answer(
+    sent_msg = await bot.send_message(
+        message.chat.id,
         "🖼 <b>Rasm</b>\n\n"
         "Mahsulot rasmini yuboring yoki rasm file_id sini kiriting:",
         parse_mode="HTML"
     )
+    data = await state.get_data()
+    message_ids = data.get('message_ids', [])
+    message_ids.append(sent_msg.message_id)
+    await state.update_data(message_ids=message_ids)
     await state.set_state(ProductAdd.waiting_for_photo)
 
 @router.message(ProductAdd.waiting_for_photo, F.text)
@@ -82,17 +105,27 @@ async def process_photo(message: Message, state: FSMContext):
     )
 
     if success:
-        await message.answer(
+        success_msg = await bot.send_message(
+            message.chat.id,
             f"✅ <b>Mahsulot muvaffaqiyatli qo'shildi!</b>\n\n"
             f"🏷 <b>Nomi:</b> {data['name']}\n"
             f"💰 <b>Narxi:</b> {data['price']:,} so'm".replace(",", " "),
             parse_mode="HTML"
         )
     else:
-        await message.answer(
+        error_msg = await bot.send_message(
+            message.chat.id,
             "❌ <b>Xatolik yuz berdi!</b>\n\n"
             "<i>Iltimos, qayta urinib ko'ring.</i>",
             parse_mode="HTML"
         )
+
+    # Delete previous messages
+    message_ids = data.get('message_ids', [])
+    for msg_id in message_ids:
+        try:
+            await bot.delete_message(message.chat.id, msg_id)
+        except Exception as e:
+            print(f"Failed to delete message {msg_id}: {e}")
 
     await state.clear()

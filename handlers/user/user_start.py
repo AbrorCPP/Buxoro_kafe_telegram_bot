@@ -6,7 +6,7 @@ from keyboards.reply.main_menu import main_menu_inline
 
 from router import router
 from states.start_state import UserRegistrationForm
-from loader import db
+from loader import db, bot
 
 db = db
 
@@ -39,7 +39,8 @@ async def start_cmd(message: Message, state: FSMContext):
 
     if not user:
         await state.clear()
-        await message.answer(WELCOME_NEW, parse_mode="HTML")
+        sent_msg = await bot.send_message(message.chat.id, WELCOME_NEW, parse_mode="HTML")
+        await state.update_data(message_ids=[sent_msg.message_id])
         await state.set_state(UserRegistrationForm.fullname)
     else:
         name = user.get('username') or message.from_user.first_name or 'Mehmon'
@@ -53,12 +54,17 @@ async def start_cmd(message: Message, state: FSMContext):
 async def process_fullname(message: Message, state: FSMContext):
     await state.update_data(fullname=message.text)
     await state.set_state(UserRegistrationForm.phone)
-    await message.answer(
+    sent_msg = await bot.send_message(
+        message.chat.id,
         "✅ Ajoyib!\n\n"
         "📱 Endi telefon raqamingizni yuboring:\n"
         "<i>Masalan: +998901234567</i>",
         parse_mode="HTML"
     )
+    data = await state.get_data()
+    message_ids = data.get('message_ids', [])
+    message_ids.append(sent_msg.message_id)
+    await state.update_data(message_ids=message_ids)
 
 @router.message(UserRegistrationForm.phone)
 async def process_phone(message: Message, state: FSMContext):
@@ -72,20 +78,30 @@ async def process_phone(message: Message, state: FSMContext):
         )
 
         await state.set_state(UserRegistrationForm.address)
-        await message.answer(
+        sent_msg = await bot.send_message(
+            message.chat.id,
             "📍 <b>Oxirgi qadam!</b>\n\n"
             "Pastdagi tugma orqali joylashuvingizni yuboring.\n"
             "<i>Bu yetkazib berish narxini hisoblash uchun kerak.</i>",
             reply_markup=kb,
             parse_mode="HTML"
         )
+        data = await state.get_data()
+        message_ids = data.get('message_ids', [])
+        message_ids.append(sent_msg.message_id)
+        await state.update_data(message_ids=message_ids)
     else:
-        await message.answer(
+        sent_msg = await bot.send_message(
+            message.chat.id,
             "❌ <b>Noto'g'ri format!</b>\n\n"
             "Iltimos, telefon raqamingizni to'g'ri kiriting.\n"
             "<i>Masalan: +998901234567</i>",
             parse_mode="HTML"
         )
+        data = await state.get_data()
+        message_ids = data.get('message_ids', [])
+        message_ids.append(sent_msg.message_id)
+        await state.update_data(message_ids=message_ids)
 
 @router.message(UserRegistrationForm.address, F.location)
 async def process_address(message: Message, state: FSMContext):
@@ -100,7 +116,8 @@ async def process_address(message: Message, state: FSMContext):
             coordinates=coordinates,
         )
         name = data.get("fullname") or message.from_user.first_name
-        await message.answer(
+        sent_msg = await bot.send_message(
+            message.chat.id,
             f"🎉 <b>Ro'yxatdan o'tish yakunlandi!</b>\n\n"
             f"👋 Xush kelibsiz, <b>{name}</b>!\n"
             f"━━━━━━━━━━━━━━━━━\n"
@@ -110,6 +127,13 @@ async def process_address(message: Message, state: FSMContext):
             reply_markup=main_menu_inline(),
             parse_mode="HTML"
         )
+        # Now delete all previous messages
+        message_ids = data.get('message_ids', [])
+        for msg_id in message_ids:
+            try:
+                await bot.delete_message(message.chat.id, msg_id)
+            except Exception as e:
+                print(f"Failed to delete message {msg_id}: {e}")
         await state.clear()
 
     except Exception as e:
