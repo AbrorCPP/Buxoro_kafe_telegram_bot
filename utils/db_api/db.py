@@ -225,3 +225,25 @@ class Database:
     def get_order_bids(self, order_id):
         sql = "SELECT b.courier_id, c.username, c.phone FROM order_bids b JOIN couriers c ON b.courier_id = c.telegram_id WHERE b.order_id = %s"
         return self.execute(sql, (order_id,), fetchall=True)
+
+    def add_restaurant(self, name, address, latitude, longitude, description):
+        sql = "INSERT INTO restaurants (name, address, latitude, longitude, description) VALUES (%s, %s, %s, %s, %s)"
+        params = (name, address, latitude, longitude, description)
+        return self.execute(sql, params, commit=True)
+
+    def get_restaurant(self, restaurant_id):
+        sql = "SELECT * FROM restaurants WHERE id = %s"
+        return self.execute(sql, (restaurant_id,), fetchone=True)
+
+    def get_all_restaurants(self):
+        sql = "SELECT * FROM restaurants"
+        return self.execute(sql, fetchall=True)
+
+    def update_restaurant(self, restaurant_id, name, address, latitude, longitude, description):
+        sql = "UPDATE restaurants SET name=%s, address=%s, latitude=%s, longitude=%s, description=%s WHERE id=%s"
+        params = (name, address, latitude, longitude, description, restaurant_id)
+        return self.execute(sql, params, commit=True)
+
+    def delete_restaurant(self, restaurant_id):
+        sql = "DELETE FROM restaurants WHERE id = %s"
+        return self.execute(sql, (restaurant_id,), commit=True)
