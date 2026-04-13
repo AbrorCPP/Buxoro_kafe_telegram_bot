@@ -78,6 +78,7 @@ async def process_checkout(call: CallbackQuery, state: FSMContext):
 
 @router.message(CheckoutState.location)
 async def process_checkout_location(message: Message, state: FSMContext):
+    await message.delete()
     from utils.math_utils import haversine
     # New Location: 87XQ+J64, Amir Temur Avenue, Tashkent
     KAFE_LAT, KAFE_LON = 41.314681, 69.243562
@@ -107,9 +108,16 @@ async def process_checkout_location(message: Message, state: FSMContext):
     total_price = sum(item['price'] * item['quantity'] for item in cart_items)
     items = [{'product_id': i['product_id'], 'quantity': i['quantity'], 'price': i['price']} for i in cart_items]
     order_id = db.create_order(telegram_id, items, total_price, delivery_price, distance)
-
-    db.clear_cart(telegram_id)
-    await state.clear()
+    if not order_id:
+        from keyboards.reply.main_menu import main_menu_inline
+        await message.answer(
+            "❌ <b>Buyurtma yaratishda xatolik yuz berdi.</b>\n\n"
+            "Iltimos, savatingizni tekshirib qayta urinib ko'ring.",
+            reply_markup=main_menu_inline(),
+            parse_mode="HTML"
+        )
+        await state.clear()
+        return
 
     prices = [
         LabeledPrice(label=f"Buyurtma #{order_id}", amount=int(total_price * 100)),
@@ -136,39 +144,19 @@ async def process_checkout_location(message: Message, state: FSMContext):
             prices=prices,
             start_parameter="buxoro_kafe_order"
         )
+        db.clear_cart(telegram_id)
+        await state.clear()
     except Exception as e:
         print(f"Invoice error: {e}")
         from keyboards.reply.main_menu import main_menu_inline
-        from loader import bot
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        await state.clear()
+        db.delete_order(order_id)
         await message.answer(
-            f"✅ <b>Buyurtmangiz qabul qilindi!</b>\n\n"
-            f"🧾 Buyurtma raqami: <b>#{order_id}</b>\n"
-            f"📏 Masofa: {distance:.1f} km\n"
-            f"💰 Ovqat: {total_price:,} so'm\n".replace(",", " ") +
-            f"🚚 Yetkazish: {delivery_price:,} so'm\n".replace(",", " ") +
-            f"\n<i>Kuryer tez orada siz bilan bog'lanadi!</i>",
+            "❌ <b>To'lov sahifasini ochib bo'lmadi.</b>\n\n"
+            "Iltimos, keyinroq qayta urinib ko'ring.",
             reply_markup=main_menu_inline(),
             parse_mode="HTML"
         )
-        couriers = db.get_all_couriers()
-        kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🙋 Men yetkazaman!", callback_data=f"volunteer_{order_id}")]
-        ])
-        for c in couriers:
-            try:
-                await bot.send_message(
-                    c['telegram_id'],
-                    f"🔔 <b>Yangi buyurtma!</b>\n\n"
-                    f"🧾 Buyurtma: <b>#{order_id}</b>\n"
-                    f"📏 Masofa: {distance:.1f} km\n"
-                    f"🚚 Yetkazish haqqi: {delivery_price:,} so'm\n\n".replace(",", " ") +
-                    f"<i>Qabul qilasizmi?</i>",
-                    reply_markup=kb,
-                    parse_mode="HTML"
-                )
-            except Exception as ce:
-                pass
 
 @router.pre_checkout_query()
 async def process_pre_checkout_query(pre_checkout_query: PreCheckoutQuery):

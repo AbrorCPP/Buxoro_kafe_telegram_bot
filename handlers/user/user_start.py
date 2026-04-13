@@ -53,6 +53,7 @@ async def start_cmd(message: Message, state: FSMContext):
 
 @router.message(UserRegistrationForm.fullname)
 async def process_fullname(message: Message, state: FSMContext):
+    await message.delete()
     await state.update_data(fullname=message.text)
     await state.set_state(UserRegistrationForm.phone)
     sent_msg = await bot.send_message(
@@ -69,6 +70,7 @@ async def process_fullname(message: Message, state: FSMContext):
 
 @router.message(UserRegistrationForm.phone)
 async def process_phone(message: Message, state: FSMContext):
+    await message.delete()
     if message.text and (message.text.isdigit() or message.text.startswith('+')):
         await state.update_data(phone=message.text)
 
@@ -106,6 +108,7 @@ async def process_phone(message: Message, state: FSMContext):
 
 @router.message(UserRegistrationForm.address, F.location)
 async def process_address(message: Message, state: FSMContext):
+    await message.delete()
     coordinates = f"{message.location.latitude}, {message.location.longitude}"
     data = await state.get_data()
 

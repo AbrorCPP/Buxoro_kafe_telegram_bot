@@ -172,6 +172,10 @@ class Database:
             self.execute(sql_item, (order_id, item['product_id'], item['quantity'], item['price']), commit=True)
         return order_id
 
+    def delete_order(self, order_id):
+        sql = "DELETE FROM orders WHERE id = %s"
+        return self.execute(sql, (order_id,), commit=True)
+
     def add_courier(self, telegram_id, username, phone):
         sql = "INSERT INTO couriers (telegram_id, username, phone) VALUES (%s, %s, %s)"
         return self.execute(sql, (telegram_id, username, phone), commit=True)
