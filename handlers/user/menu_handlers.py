@@ -7,83 +7,105 @@ from router import router
 @router.callback_query(F.data == "open_menu")
 async def show_categories(call: CallbackQuery):
     categories = db.get_all_categories()
-    builder = InlineKeyboardBuilder()
-    if categories:
-        for cat in categories:
-            builder.button(text=cat['name'], callback_data=f"cat_{cat['id']}")
-    builder.adjust(2)
-    builder.row(InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_main"))
+    if not categories:
+        await call.answer("Kategoriyalar yo'q 🙁", show_alert=True)
+        return
+
     await call.message.delete()
+
+    # Send each category as a card
+    for cat in categories:
+        text = (
+            f"🍽 <b>{cat['name']}</b>\n"
+            f"━━━━━━━━━━━━━━━━━\n\n"
+            f"{cat.get('description', '')}"
+        )
+
+        builder = InlineKeyboardBuilder()
+        builder.button(text="📂 Mahsulotlarni ko'rish", callback_data=f"cat_{cat['id']}")
+        builder.adjust(1)
+
+        if cat.get('image_id'):
+            try:
+                await call.message.answer_photo(
+                    photo=cat['image_id'],
+                    caption=text,
+                    reply_markup=builder.as_markup(),
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print(f"Kategoriya rasm yuborishda xatolik: {e}")
+                await call.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+        else:
+            await call.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+
+    # Back button at the end
+    back_builder = InlineKeyboardBuilder()
+    back_builder.button(text="🔙 Asosiy menyu", callback_data="back_main")
     await call.message.answer(
-        "🍽 <b>Menyu</b>\n"
-        "━━━━━━━━━━━━━━━━━\n\n"
-        "Qaysi kategoriyadan buyurtma berasiz?",
-        reply_markup=builder.as_markup(),
+        "Barcha kategoriyalar ko'rsatildi. Kerakli kategoriyani tanlang 👆",
+        reply_markup=back_builder.as_markup(),
         parse_mode="HTML"
     )
 
 @router.callback_query(F.data.startswith("cat_"))
 async def show_products(call: CallbackQuery):
     cat_id = call.data.split("_")[1]
+    category = db.get_category(cat_id)
     products = db.get_products_by_category(cat_id)
     if not products:
         await call.answer("Bu kategoriyada mahsulotlar yo'q 🙁", show_alert=True)
         return
 
-    builder = InlineKeyboardBuilder()
-    for prod in products:
-        builder.button(text=prod['name'], callback_data=f"prod_{prod['id']}")
-    builder.adjust(2)
-    builder.row(InlineKeyboardButton(text="🔙 Kategoriyalarga", callback_data="open_menu"))
     await call.message.delete()
-    await call.message.answer(
-        "🛍 <b>Mahsulotlar</b>\n"
-        "━━━━━━━━━━━━━━━━━\n\n"
-        "Kerakli mahsulotni tanlang 👇",
-        reply_markup=builder.as_markup(),
-        parse_mode="HTML"
-    )
 
-@router.callback_query(F.data.startswith("prod_"))
-async def show_product_detail(call: CallbackQuery):
-    try:
-        prod_id = call.data.split("_")[1]
-        product = db.get_product(prod_id)
+    # Send category image if exists
+    if category and category.get('image_id'):
+        try:
+            await call.message.answer_photo(
+                photo=category['image_id'],
+                caption=f"🍽 <b>{category['name']}</b>\n━━━━━━━━━━━━━━━━━\n\n{category.get('description', '')}",
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"Kategoriya rasm yuborishda xatolik: {e}")
 
-        if not product:
-            await call.answer("Mahsulot topilmadi 😔", show_alert=True)
-            return
-
+    # Send each product as a card
+    for prod in products:
         text = (
-            f"🍽 <b>{product['name']}</b>\n"
+            f"🍽 <b>{prod['name']}</b>\n"
             f"━━━━━━━━━━━━━━━━━\n\n"
             f"📝 <b>Tavsif:</b>\n"
-            f"<i>{product['description']}</i>\n\n"
-            f"💰 <b>Narxi:</b> {product['price']:,} so'm".replace(",", " ")
+            f"<i>{prod['description']}</i>\n\n"
+            f"💰 <b>Narxi:</b> {prod['price']:,} so'm".replace(",", " ")
         )
 
         builder = InlineKeyboardBuilder()
-        builder.button(text="🛒 Savatga qo'shish", callback_data=f"addcart_{prod_id}")
-        builder.button(text="🔙 Orqaga", callback_data=f"cat_{product['category_id']}")
+        builder.button(text="🛒 Savatga qo'shish", callback_data=f"addcart_{prod['id']}")
         builder.adjust(1)
 
-        await call.message.delete()
-        if product.get('image_id'):
+        if prod.get('image_id'):
             try:
                 await call.message.answer_photo(
-                    photo=product['image_id'],
+                    photo=prod['image_id'],
                     caption=text,
                     reply_markup=builder.as_markup(),
                     parse_mode="HTML"
                 )
             except Exception as e:
-                print(f"Rasm yuborishda xatolik: {e}")
+                print(f"Mahsulot rasm yuborishda xatolik: {e}")
                 await call.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
         else:
             await call.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
-    except Exception as e:
-        print(f"Mahsulot ko'rsatishda xatolik: {e}")
-        await call.answer("Xatolik yuz berdi 😔", show_alert=True)
+
+    # Back button at the end
+    back_builder = InlineKeyboardBuilder()
+    back_builder.button(text="🔙 Kategoriyalarga", callback_data="open_menu")
+    await call.message.answer(
+        "Barcha mahsulotlar ko'rsatildi. Kerakli bo'limni tanlang 👆",
+        reply_markup=back_builder.as_markup(),
+        parse_mode="HTML"
+    )
 
 @router.callback_query(F.data.startswith("addcart_"))
 async def process_add_cart(call: CallbackQuery):

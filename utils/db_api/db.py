@@ -82,8 +82,12 @@ class Database:
         return self.execute(sql, params, commit=True)
 
     def get_all_categories(self):
-        sql = "SELECT id, name FROM categories"
+        sql = "SELECT id, name, image_id FROM categories"
         return self.execute(sql, fetchall=True)
+
+    def get_category(self, cat_id):
+        sql = "SELECT * FROM categories WHERE id = %s"
+        return self.execute(sql, (cat_id,), fetchone=True)
     
     def delete_category(self,cat_id):
         sql = "delete from categories where id = %s"

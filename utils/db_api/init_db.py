@@ -30,7 +30,7 @@ async def create_tables():
     CREATE TABLE IF NOT EXISTS categories (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        image_id VARCHAR(255),
+        image_id text,
         description TEXT
     );
     """
@@ -43,7 +43,7 @@ async def create_tables():
         name VARCHAR(255) NOT NULL,
         description TEXT,
         price DECIMAL(15, 2) NOT NULL,
-        image_id VARCHAR(255),
+        image_id TEXT,
         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
     );
     """
@@ -134,7 +134,9 @@ async def create_tables():
     alter_queries = [
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_id VARCHAR(50)",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_price DECIMAL(10,2) DEFAULT 0",
-        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS distance_km DECIMAL(10,2) DEFAULT 0"
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS distance_km DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE products MODIFY COLUMN image_id TEXT",
+        "ALTER TABLE categories MODIFY COLUMN image_id TEXT"
     ]
     
     for query in alter_queries:

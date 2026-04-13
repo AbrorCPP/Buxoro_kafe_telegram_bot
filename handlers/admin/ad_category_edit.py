@@ -40,13 +40,13 @@ async def process_category_selection(callback: CallbackQuery, state: FSMContext)
 @router.message(EditCategory.waiting_for_name)
 async def get_new_name(message: Message, state: FSMContext):
     await state.update_data(new_name=message.text)
-    await message.answer("2. Endi yangi **RASM** yuboring(httpsini): 🔽")
+    await message.answer("2. Endi yangi **RASM** yuklang (photo yuboring): 🔽")
     await state.set_state(EditCategory.waiting_for_image)
 
-@router.message(EditCategory.waiting_for_image)
+@router.message(EditCategory.waiting_for_image, F.photo)
 async def get_new_image(message: Message, state: FSMContext):
-    photo_id = message.text        
-    await state.update_data(new_image_id=photo_id)
+    photo_file_id = message.photo[-1].file_id        
+    await state.update_data(new_image_id=photo_file_id)
     await message.answer("3. Oxirgi qadam: Yangi **TAVSIF** (description) kiriting:")
     await state.set_state(EditCategory.waiting_for_desc)
 

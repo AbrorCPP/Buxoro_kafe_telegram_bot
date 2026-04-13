@@ -82,7 +82,7 @@ async def process_price(message: Message, state: FSMContext):
     sent_msg = await bot.send_message(
         message.chat.id,
         "🖼 <b>Rasm</b>\n\n"
-        "Mahsulot rasmini yuboring yoki rasm file_id sini kiriting:",
+        "Mahsulot rasmini yuklang (photo yuboring):",
         parse_mode="HTML"
     )
     data = await state.get_data()
@@ -91,9 +91,10 @@ async def process_price(message: Message, state: FSMContext):
     await state.update_data(message_ids=message_ids)
     await state.set_state(ProductAdd.waiting_for_photo)
 
-@router.message(ProductAdd.waiting_for_photo, F.text)
+@router.message(ProductAdd.waiting_for_photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
-    await state.update_data(photo=message.text)
+    photo_file_id = message.photo[-1].file_id
+    await state.update_data(photo=photo_file_id)
     data = await state.get_data()
 
     success = db.add_new_product(

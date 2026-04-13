@@ -7,6 +7,7 @@ from keyboards.reply.main_menu import main_menu_inline
 from router import router
 from states.start_state import UserRegistrationForm
 from loader import db, bot
+import asyncio
 
 db = db
 
@@ -127,11 +128,12 @@ async def process_address(message: Message, state: FSMContext):
             reply_markup=main_menu_inline(),
             parse_mode="HTML"
         )
-        # Now delete all previous messages
+        # Now delete all previous messages in order
         message_ids = data.get('message_ids', [])
         for msg_id in message_ids:
             try:
                 await bot.delete_message(message.chat.id, msg_id)
+                await asyncio.sleep(0.5)  # Delay between deletions
             except Exception as e:
                 print(f"Failed to delete message {msg_id}: {e}")
         await state.clear()

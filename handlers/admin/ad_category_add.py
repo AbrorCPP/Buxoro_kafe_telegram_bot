@@ -1,6 +1,6 @@
 #This file allows admins to enter categories using states;
 
-from aiogram import types
+from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from loader import db, bot
 from router import router
@@ -32,16 +32,17 @@ async def add_category_state_name(message: types.Message, state:FSMContext):
 @router.message(Category_creation_Form.description)
 async def add_category_state_description(message: types.Message, state:FSMContext):
     await state.update_data(description = message.text)
-    sent_msg = await bot.send_message(message.chat.id, "Kategoriya tarifi qabul qilindi.✅\nEndi category rasmi linkini jo'nating.🔽")
+    sent_msg = await bot.send_message(message.chat.id, "Kategoriya tarifi qabul qilindi.✅\nEndi category rasmini yuklang (photo yuboring).🔽")
     data = await state.get_data()
     message_ids = data.get('message_ids', [])
     message_ids.append(sent_msg.message_id)
     await state.update_data(message_ids=message_ids)
     await state.set_state(Category_creation_Form.image_id)
 
-@router.message(Category_creation_Form.image_id)
+@router.message(Category_creation_Form.image_id, F.photo)
 async def add_category_state_image_id(message: types.Message, state:FSMContext):
-    await state.update_data(image_id = message.text)
+    photo_file_id = message.photo[-1].file_id
+    await state.update_data(image_id = photo_file_id)
     sent_msg = await bot.send_message(message.chat.id, "Rasm linki qabul qilindi.✅")
     data = await state.get_data()
     message_ids = data.get('message_ids', [])
